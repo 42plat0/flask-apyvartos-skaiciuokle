@@ -1,0 +1,8 @@
+# Model
+*.pt
+
+venv/
+__pycache__/
+static/images/
+static/node_modules/
+

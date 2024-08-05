@@ -1,0 +1,11 @@
+{% extends "layout.html" %}
+
+{% block main %}
+    <div id="image_box" class = "detect_object m-3" > </div>
+
+    <form action="/detect_coin" enctype="multipart/form-data" id="image_form" method="post">
+        <input type="file" name="coin_image" class="form-control m-3" id="coin_image">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <button class="btn btn-primary confirm-btn">Ikelti nuotrauka</button>
+    </form>
+{% endblock %}
