@@ -26,7 +26,7 @@ db = SQL("sqlite:///apyvarta.db")
 
 @app.route("/")
 def index():
-    return render_template("detect_coin.html")
+    return redirect("/detect_coin")
 
 @app.route("/detect_coin", methods=["GET", "POST"])
 def detect_coin():
@@ -63,7 +63,7 @@ def detect_coin():
             
             return redirect(url_for("photo", prediction_img=prediction_img, coin_count=coin_count))
         
-    return render_template("detect_coin.html") 
+    return render_template("index.html") 
 
 
 @app.route("/photo")
