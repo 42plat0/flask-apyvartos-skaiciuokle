@@ -15,7 +15,7 @@ def detect_coins(url, img_save_folder):
         conf=0.3,
         show_labels=False,
         project=img_save_folder,
-        name="predictions")
+        name="predictions",)
 
             
     for prediction_photo in coin_detector: 

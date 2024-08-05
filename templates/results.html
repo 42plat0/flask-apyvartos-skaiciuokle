@@ -1,0 +1,11 @@
+{% extends "layout.html" %}
+
+{% block main %}
+    <div>
+        <form action="/submitted" method="post">
+            <input type="number" name="amount" autofocus placeholder="Teisingas kiekis">
+            <button type="submit" class="btn btn-primary confirm-btn">Submit</button>
+
+        </form>
+    </div>
+{% endblock %}

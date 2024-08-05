@@ -29,7 +29,7 @@ imageInput.addEventListener("change", ()=>{
         cropper.getCroppedCanvas().toBlob((blob) => {
             let fd = new FormData()
             // saveBlob(blob, imageName)
-            fd.append("coin_image", blob, imageName); //model img variable name
+            fd.append("cropped_coin_image", blob, imageName); //model img variable name
             fd.append("csrf_token", csrf[0].value);
             console.log(blob)
             $.ajax({
