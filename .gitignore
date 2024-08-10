@@ -1,8 +1,14 @@
 # Model
 *.pt
 
+*.json
+*.db
+
 venv/
 __pycache__/
 static/images/
 static/node_modules/
+
+*.py
+!app.py
 
