@@ -1,7 +1,7 @@
 import os
 
 from datetime import datetime
-from cs50 import SQL 
+import sqlite3
 from flask import Flask, render_template, request, redirect, url_for
 from werkzeug.utils import secure_filename
 
@@ -17,12 +17,34 @@ ALLOWED_EXTENSIONS = ("png", "jpg", "jpeg")
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_FOLDER = BASE_DIR + IMAGE_FOLDER
 
+DATABASE = "apyvarta.db"
+
 SECRET_KEY = os.urandom(32)
 
 app = Flask(__name__)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
-db = SQL("sqlite:///apyvarta.db")
+class Database():
+    def __init__(self):
+        self.coin_table = "coins"
+
+        db = sqlite3.connect(DATABASE)
+
+        # Check if table doesn't already exist
+        table = db.execute(f"SELECT name FROM sqlite_master WHERE type='table' and name='{self.coin_table}'")
+        
+        if not table:
+            db.execute(f"CREATE TABLE {self.coin_table}(id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, date TEXT NOT NULL, coins_counted INTEGER NOT NULL, is_correct BOOLEAN)")
+        
+        db.close()
+    
+    def write(self, command, values):
+        db = sqlite3.connect(DATABASE)
+        db.execute(command, values)
+        db.commit()
+        db.close()
+
+db = Database()
 
 @app.route("/")
 def index():
@@ -30,6 +52,7 @@ def index():
 
 @app.route("/detect_coin", methods=["GET", "POST"])
 def detect_coin():
+    global db
 
     if request.method == "POST":
 
@@ -49,18 +72,18 @@ def detect_coin():
             filename = secure_filename(f"my_image_{date}.jpg")
             path = os.path.join(app.config["UPLOAD_FOLDER"] + ORIGINAL_PHOTOS, filename)
             
+            # To retrieve from db easily
+            date = secure_filename(date)
             # # Save original image
             file.save(path)
-
 
             # # Pass image to model
             coin_count = detect_coins(path, app.config["UPLOAD_FOLDER"])
 
             prediction_img = IMAGE_FOLDER + "/predictions/" + filename
             
-            db.execute("INSERT INTO coins (photo_name, date, coin_count, is_correct) VALUES(?,?,?,?)", 
-                       filename, date, coin_count, None)
-            
+            db.write("INSERT INTO coins (date, coins_counted, is_correct) VALUES(?,?,?)", (date, coin_count, None))
+
             return redirect(url_for("photo", prediction_img=prediction_img, coin_count=coin_count))
         
     return render_template("index.html") 
@@ -76,8 +99,13 @@ def photo():
 
 @app.route("/result", methods=["GET", "POST"])
 def result():
+    global db
+
     if request.method == "POST":
-        prediction_img = request.form.get("prediction_img").split("/")[-1]
+        prediction_img = request.form.get("prediction_img").split("/")[-1].split("_")
+
+        # Get saved in db name
+        saved_img = prediction_img[-2] + "_" + prediction_img[-1].split(".")[0]
 
         correct_prediction = request.form.get("correct")
         incorrect_prediction = request.form.get("incorrect")
@@ -88,8 +116,7 @@ def result():
         elif incorrect_prediction:
             status = False
 
-        
-        db.execute("UPDATE coins SET is_correct=? WHERE photo_name = ?", status, prediction_img)
+        db.write("UPDATE coins SET is_correct=? WHERE date = ?", (status, saved_img))
 
         return render_template("thank_you.html")
     
