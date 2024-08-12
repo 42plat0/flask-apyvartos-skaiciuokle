@@ -12,3 +12,5 @@ static/node_modules/
 *.py
 !app.py
 
+*.py
+!app.py
