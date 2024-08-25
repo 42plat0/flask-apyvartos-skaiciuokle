@@ -5,21 +5,23 @@ import sqlite3
 from flask import Flask, render_template, request, redirect, url_for
 from werkzeug.utils import secure_filename
 
-from detector import detect_coins
+from static.modules.detector.detector import CoinDetector
 
 
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 IMAGE_FOLDER = "/static/images/"
 ORIGINAL_PHOTOS = "uploads/"
-ALLOWED_EXTENSIONS = ("png", "jpg", "jpeg")
+PREDICTIONS_FOLDER = "predictions/"
 
+ALLOWED_EXTENSIONS = ("png", "jpg", "jpeg")
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_FOLDER = BASE_DIR + IMAGE_FOLDER
 
 DATABASE = "apyvarta.db"
 
-SECRET_KEY = os.urandom(32)
+model_path = "static/modules/detector/object_detection_model_160.pt"
+cd = CoinDetector(model_path)
 
 app = Flask(__name__)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
@@ -62,7 +64,7 @@ def detect_coin():
             return "No photo was uploaded"
         
         file = request.files[name]
-
+        print(file)
         if file.filename == "":
             return "No photo was uploaded"
 
@@ -70,17 +72,16 @@ def detect_coin():
 
             date = datetime.now().strftime(DATE_FORMAT)
             filename = secure_filename(f"my_image_{date}.jpg")
-            path = os.path.join(app.config["UPLOAD_FOLDER"] + ORIGINAL_PHOTOS, filename)
-            
+            original_image = os.path.join(app.config["UPLOAD_FOLDER"] + ORIGINAL_PHOTOS, filename)
             # To retrieve from db easily
             date = secure_filename(date)
-            # # Save original image
-            file.save(path)
+            # Save original image
+            file.save(original_image)
+            
+            # prediction_img = os.path.join(app.config["UPLOAD_FOLDER"] + PREDICTIONS_FOLDER, filename)
+            # Pass image to model
+            # coin_count = cd.get_coin_count(original_image, prediction_img)
 
-            # # Pass image to model
-            coin_count = detect_coins(path, app.config["UPLOAD_FOLDER"])
-
-            prediction_img = IMAGE_FOLDER + "/predictions/" + filename
             
             db.write("INSERT INTO coins (date, coins_counted, is_correct) VALUES(?,?,?)", (date, coin_count, None))
 
