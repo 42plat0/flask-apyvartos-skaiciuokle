@@ -6,12 +6,12 @@ from flask import Flask, render_template, request, redirect, url_for
 from werkzeug.utils import secure_filename
 
 from static.modules.detector.detector import CoinDetector
-
+from static.modules.database.database import Database
 
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 IMAGE_FOLDER = "/static/images/"
 ORIGINAL_PHOTOS = "uploads/"
-PREDICTIONS_FOLDER = "predictions/"
+PREDICTIONS_FOLDER = "predict/"
 
 ALLOWED_EXTENSIONS = ("png", "jpg", "jpeg")
 
@@ -19,6 +19,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_FOLDER = BASE_DIR + IMAGE_FOLDER
 
 DATABASE = "apyvarta.db"
+db = Database("coins", DATABASE)
 
 model_path = "static/modules/detector/object_detection_model_160.pt"
 cd = CoinDetector(model_path)
@@ -26,27 +27,6 @@ cd = CoinDetector(model_path)
 app = Flask(__name__)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
-class Database():
-    def __init__(self):
-        self.coin_table = "coins"
-
-        db = sqlite3.connect(DATABASE)
-
-        # Check if table doesn't already exist
-        table = db.execute(f"SELECT name FROM sqlite_master WHERE type='table' and name='{self.coin_table}'")
-        
-        if not table:
-            db.execute(f"CREATE TABLE {self.coin_table}(id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, date TEXT NOT NULL, coins_counted INTEGER NOT NULL, is_correct BOOLEAN)")
-        
-        db.close()
-    
-    def write(self, command, values):
-        db = sqlite3.connect(DATABASE)
-        db.execute(command, values)
-        db.commit()
-        db.close()
-
-db = Database()
 
 @app.route("/")
 def index():
@@ -64,7 +44,7 @@ def detect_coin():
             return "No photo was uploaded"
         
         file = request.files[name]
-        print(file)
+
         if file.filename == "":
             return "No photo was uploaded"
 
@@ -73,15 +53,18 @@ def detect_coin():
             date = datetime.now().strftime(DATE_FORMAT)
             filename = secure_filename(f"my_image_{date}.jpg")
             original_image = os.path.join(app.config["UPLOAD_FOLDER"] + ORIGINAL_PHOTOS, filename)
+
             # To retrieve from db easily
             date = secure_filename(date)
             # Save original image
             file.save(original_image)
             
-            # prediction_img = os.path.join(app.config["UPLOAD_FOLDER"] + PREDICTIONS_FOLDER, filename)
-            # Pass image to model
-            # coin_count = cd.get_coin_count(original_image, prediction_img)
+            prediction_img = os.path.join(IMAGE_FOLDER + PREDICTIONS_FOLDER, filename)
+            
+            # Automatically creates folder with name "predict"
+            coin_count = cd.get_coin_count(original_image, app.config["UPLOAD_FOLDER"]) # predict/
 
+            print(prediction_img)
             
             db.write("INSERT INTO coins (date, coins_counted, is_correct) VALUES(?,?,?)", (date, coin_count, None))
 
@@ -119,7 +102,7 @@ def result():
 
         db.write("UPDATE coins SET is_correct=? WHERE date = ?", (status, saved_img))
 
-        return render_template("thank_you.html")
+        return redirect("/")
     
     return render_template("photo.html")
 
