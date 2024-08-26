@@ -1,7 +1,6 @@
 import os
 
 from datetime import datetime
-import sqlite3
 from flask import Flask, render_template, request, redirect, url_for
 from werkzeug.utils import secure_filename
 
@@ -11,7 +10,7 @@ from static.modules.database.database import Database
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 IMAGE_FOLDER = "/static/images/"
 ORIGINAL_PHOTOS = "uploads/"
-PREDICTIONS_FOLDER = "predict/"
+PREDICTIONS_FOLDER = "/predictions"
 
 ALLOWED_EXTENSIONS = ("png", "jpg", "jpeg")
 
@@ -60,11 +59,8 @@ def detect_coin():
             file.save(original_image)
             
             prediction_img = os.path.join(IMAGE_FOLDER + PREDICTIONS_FOLDER, filename)
-            
             # Automatically creates folder with name "predict"
-            coin_count = cd.get_coin_count(original_image, app.config["UPLOAD_FOLDER"]) # predict/
-
-            print(prediction_img)
+            coin_count = cd.get_coin_count(original_image, app.config["UPLOAD_FOLDER"]+ PREDICTIONS_FOLDER)
             
             db.write("INSERT INTO coins (date, coins_counted, is_correct) VALUES(?,?,?)", (date, coin_count, None))
 
