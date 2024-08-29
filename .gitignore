@@ -1,4 +1,8 @@
-*
-!static/style.css
-!app.py
-!requirements.txt
+*env
+__pycache__
+static/images/predictions
+static/images/uploads/*
+static/node_modules
+*.js
+*.db
+*.pt
